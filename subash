@@ -1,0 +1,63 @@
+import numpy as np
+import matplotlib.pyplot as plt
+from tensorflow.keras.datasets import mnist
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import Conv2D, MaxPooling2D, Flatten, Dense
+from tensorflow.keras.utils import to_categorical
+
+
+# Load MNIST dataset
+(x_train, y_train), (x_test, y_test) = mnist.load_data()
+
+# Normalize pixel values to range [0, 1]
+x_train = x_train.astype('float32') / 255
+x_test = x_test.astype('float32') / 255
+
+# Reshape data to include channel dimension
+x_train = x_train.reshape((x_train.shape[0], 28, 28, 1))
+x_test = x_test.reshape((x_test.shape[0], 28, 28, 1))
+
+# One-hot encode labels
+y_train = to_categorical(y_train)
+y_test = to_categorical(y_test)
+
+model = Sequential([
+    Conv2D(32, (3, 3), activation='relu', input_shape=(28, 28, 1)),
+    MaxPooling2D((2, 2)),
+    Conv2D(64, (3, 3), activation='relu'),
+    MaxPooling2D((2, 2)),
+    Conv2D(128, (3, 3), activation='relu'),
+    MaxPooling2D((2, 2)),
+    Flatten(),
+    Dense(128, activation='relu'),
+    Dense(10, activation='softmax')
+])
+model.compile(optimizer='adam',
+              loss='categorical_crossentropy',
+              metrics=['accuracy'])
+
+
+history = model.fit(x_train, y_train, epochs=10, batch_size=200, validation_data=(x_test, y_test))
+test_loss, test_acc = model.evaluate(x_test, y_test, verbose=0)
+print(f"Test accuracy: {test_acc * 100:.2f}%")
+# Plot training & validation accuracy values
+plt.plot(history.history['accuracy'])
+plt.plot(history.history['val_accuracy'])
+plt.title('Model accuracy')
+plt.xlabel('Epoch')
+plt.ylabel('Accuracy')
+plt.legend(['Train', 'Test'], loc='upper left')
+plt.show()
+
+
+from tensorflow.keras.preprocessing import image
+
+# Load and preprocess the image
+img = image.load_img('path_to_image.png', target_size=(28, 28), color_mode='grayscale')
+img_array = image.img_to_array(img)
+img_array = np.expand_dims(img_array, axis=0)  # Add batch dimension
+img_array = img_array.astype('float32') / 255  # Normalize
+
+# Predict the digit
+prediction = np.argmax(model.predict(img_array))
+print(f"Predicted Digit: {prediction}")
